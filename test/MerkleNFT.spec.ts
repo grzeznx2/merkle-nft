@@ -18,6 +18,9 @@ describe("MerkleNFT", function () {
   const PUBLIC_SALE_PRICE = utils.parseEther('0.1')
   const PRESALE_PRICE = utils.parseEther('0.001')
   const MAX_SUPPLY = 30
+  const BASE_URI = 'ipfs://Qmd2mBHk76jYjA2UMYqdfM9YaW1oZBycZzchznyKUEiHBV/'
+  const TOKEN_SHIFT = 10;
+  const SALT = 21;
 
   let contract: MerkleNFT
   let accounts: Awaited<ReturnType<typeof getSigners>>
@@ -174,6 +177,13 @@ describe("MerkleNFT", function () {
       expect(await contract.balanceOf(addresses[0])).to.be.equal(0)
       expect(await contract.balanceOf(addresses[1])).to.be.equal(3)
 
+    })
+
+    it('returns placeholder tokenURI for each tokenId before reveal', async () => {
+
+      for(let i = 0; i < MAX_SUPPLY; i++){
+        expect(await contract.tokenURI(i)).to.be.equal(`${BASE_URI}PLACEHOLDER`)
+      }
     })
 
    

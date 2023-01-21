@@ -80,7 +80,7 @@ contract MerkleNFT is ERC721 {
         commit1.minRevealBlock = block.number + MIN_REVEAL_PERIOD;
     }
 
-    function reveal(uint256 shift, bytes32 salt) external onlyOwner {
+    function reveal(uint256 shift, uint salt) external onlyOwner {
         require(commit1.minRevealBlock != 0, "MerkleNFT: not commited yet");
         require(commit1.revealed == false, "MerkleNFT: commit already revealed");
         require(block.number >= commit1.minRevealBlock, "MerkleNFT: cannot reveal yet");
@@ -89,8 +89,8 @@ contract MerkleNFT is ERC721 {
         tokenIdShift = shift;
     }
 
-      function createSaltedHash(uint256 shift, bytes32 salt) public view returns (bytes32) {
-        return keccak256(abi.encodePacked(address(this), shift, salt));
+      function createSaltedHash(uint256 shift, uint salt) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(shift, salt));
     }
 
     function mintWithMapping(bytes32[] calldata proof, bytes32 leaf) external payable atStage(Stages.PRESALE) {

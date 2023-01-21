@@ -2,6 +2,8 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import MerkleTree from "merkletreejs";
 import { MerkleNFT } from "../typechain-types";
+const { mine } = require("@nomicfoundation/hardhat-network-helpers"); // need this to advance the chain
+
 
 const {utils, getSigners, BigNumber} = ethers
 
@@ -28,6 +30,8 @@ describe("MerkleNFT", function () {
   let addresses: string[]
   let merkleTree: MerkleTree
   let root: Buffer
+
+  const shiftTokenId = (tokenId: number) => (tokenId + TOKEN_SHIFT) % MAX_SUPPLY
 
   const generateProof = (accountIndex: number) =>{
     return merkleTree.getHexProof(leaves[accountIndex])
@@ -202,6 +206,24 @@ describe("MerkleNFT", function () {
       const afterCommited = await contract.commit1()
       expect(afterCommited.commitHash).to.be.equal(commitHash)
       expect(afterCommited.revealed).to.be.false
+
+    })
+
+    it.only('shifts tokenId after reveal', async () => {
+
+      const TOKEN_ID = 15
+
+      const commitHash = utils.solidityKeccak256(['uint256', 'uint256'], [TOKEN_SHIFT, SALT])
+
+      const tx = await contract.connect(accounts[0]).commit(commitHash)
+      await tx.wait()
+
+      await mine(10);
+
+      const revealTx = await contract.reveal(TOKEN_SHIFT, SALT)
+      await revealTx.wait()
+      
+      expect(await contract.tokenURI(TOKEN_ID)).to.be.equal(`${BASE_URI}${shiftTokenId(TOKEN_ID)}`)
 
     })
 

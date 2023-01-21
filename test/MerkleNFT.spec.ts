@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import MerkleTree from "merkletreejs";
 import { MerkleNFT } from "../typechain-types";
 
-const {utils, getSigners} = ethers
+const {utils, getSigners, BigNumber} = ethers
 
 describe("MerkleNFT", function () {
 
@@ -184,6 +184,25 @@ describe("MerkleNFT", function () {
       for(let i = 0; i < MAX_SUPPLY; i++){
         expect(await contract.tokenURI(i)).to.be.equal(`${BASE_URI}PLACEHOLDER`)
       }
+    })
+
+    it('commits tokenId shift', async () => {
+
+      const commitHash = utils.solidityKeccak256(['uint256', 'uint256'], [TOKEN_SHIFT, SALT])
+
+      const beforeCommited = await contract.commit1()
+      
+      expect(beforeCommited.commitHash).to.be.equal('0x0000000000000000000000000000000000000000000000000000000000000000')
+      expect(beforeCommited.minRevealBlock).to.be.equal( BigNumber.from('0'))
+      expect(beforeCommited.revealed).to.be.false
+
+      const tx = await contract.connect(accounts[0]).commit(commitHash)
+      await tx.wait()
+
+      const afterCommited = await contract.commit1()
+      expect(afterCommited.commitHash).to.be.equal(commitHash)
+      expect(afterCommited.revealed).to.be.false
+
     })
 
    

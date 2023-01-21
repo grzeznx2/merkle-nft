@@ -27,6 +27,7 @@ contract MerkleNFT is ERC721 {
     uint256 constant public PRESALE_SUPPLY = 20;
     uint256 constant public PRESALE_PRICE = 0.001 ether;  
     uint256 constant public PUBLIC_SALE_PRICE = 0.1 ether;  
+    uint256 constant public MIN_REVEAL_PERIOD = 10;  
     uint256 public tokenIdShift;
     uint256 tokenSupply;
 
@@ -76,7 +77,7 @@ contract MerkleNFT is ERC721 {
     function commit(bytes32 commitHash) external onlyOwner {
         require(commit1.minRevealBlock == 0, "MerkleNFT: already commited");
         commit1.commitHash = commitHash;
-        commit1.minRevealBlock = block.number + 1;
+        commit1.minRevealBlock = block.number + MIN_REVEAL_PERIOD;
     }
 
     function reveal(uint256 shift, bytes32 salt) external onlyOwner {

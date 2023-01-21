@@ -209,7 +209,7 @@ describe("MerkleNFT", function () {
 
     })
 
-    it.only('shifts tokenId after reveal', async () => {
+    it('shifts tokenId after reveal', async () => {
 
       const TOKEN_ID = 15
 

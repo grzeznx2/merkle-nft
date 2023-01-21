@@ -4,10 +4,11 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "hardhat/console.sol";
 
 contract MerkleNFT is ERC721 {
-
+    using Strings for uint256;
     using BitMaps for BitMaps.BitMap;
 
      enum Stages {
@@ -16,10 +17,17 @@ contract MerkleNFT is ERC721 {
         SUPPLY_RUN_OUT
     }
 
+    struct Commit {
+        bytes32 commitHash;
+        uint256 minRevealBlock;
+        bool revealed;
+    }
+
     uint256 constant public MAX_SUPPLY = 30;
     uint256 constant public PRESALE_SUPPLY = 20;
     uint256 constant public PRESALE_PRICE = 0.001 ether;  
     uint256 constant public PUBLIC_SALE_PRICE = 0.1 ether;  
+    uint256 public tokenIdShift;
     uint256 tokenSupply;
 
     mapping(address => uint) deposits;
@@ -28,6 +36,8 @@ contract MerkleNFT is ERC721 {
     BitMaps.BitMap private hasMintedBitmap;
     address public owner;
     Stages public stage = Stages.PRESALE;
+    Commit public commit1;
+
 
     constructor(string memory name, string memory symbol, bytes32 _root) ERC721(name, symbol){
         owner = msg.sender;
@@ -46,6 +56,40 @@ contract MerkleNFT is ERC721 {
     modifier atStage(Stages _stage) {
         require(stage == _stage, "MerkleNFT: invalid stage");
         _;
+    }
+
+    function tokenURI(uint _tokenId) public view override returns (string memory){
+        if(commit1.revealed){
+            // After reveal every tokenId is shifted by tokenIdShift
+            // tokenId = 25, tokenIdShift = 10, MAX_SUPPLY = 30, shiftedTokenId = 5
+            uint256 shiftedTokenId = (_tokenId + tokenIdShift) % MAX_SUPPLY;
+            return string(abi.encodePacked(_baseURI(), shiftedTokenId.toString()));
+        }else{
+            return string(abi.encodePacked(_baseURI(), 'PLACEHOLDER'));
+        }
+    }
+
+    function _baseURI() internal pure override returns (string memory) {
+        return "ipfs://Qmd2mBHk76jYjA2UMYqdfM9YaW1oZBycZzchznyKUEiHBV/";
+    }
+
+    function commit(bytes32 commitHash) external onlyOwner {
+        require(commit1.minRevealBlock == 0, "MerkleNFT: already commited");
+        commit1.commitHash = commitHash;
+        commit1.minRevealBlock = block.number + 1;
+    }
+
+    function reveal(uint256 shift, bytes32 salt) external onlyOwner {
+        require(commit1.minRevealBlock != 0, "MerkleNFT: not commited yet");
+        require(commit1.revealed == false, "MerkleNFT: commit already revealed");
+        require(block.number >= commit1.minRevealBlock, "MerkleNFT: cannot reveal yet");
+        require(commit1.commitHash == createSaltedHash(shift, salt), "MerkleNFT: invalid hash");
+        commit1.revealed = true;
+        tokenIdShift = shift;
+    }
+
+      function createSaltedHash(uint256 shift, bytes32 salt) public view returns (bytes32) {
+        return keccak256(abi.encodePacked(address(this), shift, salt));
     }
 
     function mintWithMapping(bytes32[] calldata proof, bytes32 leaf) external payable atStage(Stages.PRESALE) {

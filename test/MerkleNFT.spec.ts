@@ -194,16 +194,16 @@ describe("MerkleNFT", function () {
 
       const commitHash = utils.solidityKeccak256(['uint256', 'uint256'], [TOKEN_SHIFT, SALT])
 
-      const beforeCommited = await contract.commit1()
+      const beforeCommited = await contract.commit()
       
       expect(beforeCommited.commitHash).to.be.equal('0x0000000000000000000000000000000000000000000000000000000000000000')
       expect(beforeCommited.minRevealBlock).to.be.equal( BigNumber.from('0'))
       expect(beforeCommited.revealed).to.be.false
 
-      const tx = await contract.connect(accounts[0]).commit(commitHash)
+      const tx = await contract.connect(accounts[0]).makeCommit(commitHash)
       await tx.wait()
 
-      const afterCommited = await contract.commit1()
+      const afterCommited = await contract.commit()
       expect(afterCommited.commitHash).to.be.equal(commitHash)
       expect(afterCommited.revealed).to.be.false
 
@@ -215,7 +215,7 @@ describe("MerkleNFT", function () {
 
       const commitHash = utils.solidityKeccak256(['uint256', 'uint256'], [TOKEN_SHIFT, SALT])
 
-      const tx = await contract.connect(accounts[0]).commit(commitHash)
+      const tx = await contract.connect(accounts[0]).makeCommit(commitHash)
       await tx.wait()
 
       await mine(10);

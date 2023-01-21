@@ -37,7 +37,7 @@ contract MerkleNFT is ERC721 {
     BitMaps.BitMap private hasMintedBitmap;
     address public owner;
     Stages public stage = Stages.PRESALE;
-    Commit public commit1;
+    Commit public commit;
 
 
     constructor(string memory name, string memory symbol, bytes32 _root) ERC721(name, symbol){
@@ -60,7 +60,7 @@ contract MerkleNFT is ERC721 {
     }
 
     function tokenURI(uint _tokenId) public view override returns (string memory){
-        if(commit1.revealed){
+        if(commit.revealed){
             // After reveal every tokenId is shifted by tokenIdShift
             // tokenId = 25, tokenIdShift = 10, MAX_SUPPLY = 30, shiftedTokenId = 5
             uint256 shiftedTokenId = (_tokenId + tokenIdShift) % MAX_SUPPLY;
@@ -74,18 +74,18 @@ contract MerkleNFT is ERC721 {
         return "ipfs://Qmd2mBHk76jYjA2UMYqdfM9YaW1oZBycZzchznyKUEiHBV/";
     }
 
-    function commit(bytes32 commitHash) external onlyOwner {
-        require(commit1.minRevealBlock == 0, "MerkleNFT: already commited");
-        commit1.commitHash = commitHash;
-        commit1.minRevealBlock = block.number + MIN_REVEAL_PERIOD;
+    function makeCommit(bytes32 commitHash) external onlyOwner {
+        require(commit.minRevealBlock == 0, "MerkleNFT: already commited");
+        commit.commitHash = commitHash;
+        commit.minRevealBlock = block.number + MIN_REVEAL_PERIOD;
     }
 
     function reveal(uint256 shift, uint salt) external onlyOwner {
-        require(commit1.minRevealBlock != 0, "MerkleNFT: not commited yet");
-        require(commit1.revealed == false, "MerkleNFT: commit already revealed");
-        require(block.number >= commit1.minRevealBlock, "MerkleNFT: cannot reveal yet");
-        require(commit1.commitHash == createSaltedHash(shift, salt), "MerkleNFT: invalid hash");
-        commit1.revealed = true;
+        require(commit.minRevealBlock != 0, "MerkleNFT: not commited yet");
+        require(commit.revealed == false, "MerkleNFT: commit already revealed");
+        require(block.number >= commit.minRevealBlock, "MerkleNFT: cannot reveal yet");
+        require(commit.commitHash == createSaltedHash(shift, salt), "MerkleNFT: invalid hash");
+        commit.revealed = true;
         tokenIdShift = shift;
     }
 
